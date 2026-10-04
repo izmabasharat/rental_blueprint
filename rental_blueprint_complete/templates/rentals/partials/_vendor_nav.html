@@ -1,0 +1,10 @@
+{% with base="whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium" %}
+<nav class="mb-6 flex gap-1 overflow-x-auto border-b border-slate-200 pb-2" aria-label="Vendor">
+  <a href="{% url 'rentals:dashboard' %}" class="{{ base }} {% if active_tab == 'overview' %}bg-teal-800 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">Overview</a>
+  <a href="{% url 'rentals:vendor_properties' %}" class="{{ base }} {% if active_tab == 'properties' %}bg-teal-800 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">My properties</a>
+  <a href="{% url 'rentals:add_property' %}" class="{{ base }} {% if active_tab == 'add' %}bg-teal-800 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">Add property</a>
+  <a href="{% url 'rentals:vendor_inquiries' %}" class="{{ base }} {% if active_tab == 'inquiries' %}bg-teal-800 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">Inquiries</a>
+  <a href="{% url 'rentals:vendor_requests' %}" class="{{ base }} {% if active_tab == 'requests' %}bg-teal-800 text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">Booking requests</a>
+  <a href="{% url 'accounts:profile' %}" class="{{ base }} text-slate-700 hover:bg-slate-100">Profile</a>
+</nav>
+{% endwith %}

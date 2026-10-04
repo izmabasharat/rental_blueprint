@@ -1,0 +1,17 @@
+{# Split layout used by login + register. Expects: tab = "login" or "register" #}
+<main class="mx-auto grid max-w-5xl overflow-hidden px-4 py-10 sm:px-6 lg:grid-cols-2 lg:py-16">
+  <div class="hidden flex-col justify-center rounded-l-3xl bg-gradient-to-br from-teal-800 to-slate-900 p-10 text-white lg:flex">
+    <i class="fa-solid fa-house-chimney text-4xl text-teal-300"></i>
+    <h2 class="mt-4 text-3xl font-extrabold leading-tight">Find your next property</h2>
+    <ul class="mt-6 space-y-3 text-teal-50">
+      <li><i class="fa-solid fa-check mr-2 text-teal-300"></i>Search homes to buy or rent</li>
+      <li><i class="fa-solid fa-check mr-2 text-teal-300"></i>Save favourites and contact agents</li>
+      <li><i class="fa-solid fa-check mr-2 text-teal-300"></i>Agents: list properties and track leads</li>
+    </ul>
+  </div>
+  <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-xl sm:p-8 lg:rounded-l-none">
+    <div class="grid grid-cols-2 rounded-xl bg-slate-100 p-1 text-center text-sm font-semibold" role="tablist">
+      <a role="tab" aria-selected="{% if tab == 'login' %}true{% else %}false{% endif %}" href="{% url 'login' %}" class="rounded-lg py-2 {% if tab == 'login' %}bg-white text-teal-800 shadow{% else %}text-slate-600 hover:text-slate-900{% endif %}">Log in</a>
+      <a role="tab" aria-selected="{% if tab == 'register' %}true{% else %}false{% endif %}" href="{% url 'accounts:register' %}" class="rounded-lg py-2 {% if tab == 'register' %}bg-white text-teal-800 shadow{% else %}text-slate-600 hover:text-slate-900{% endif %}">Register</a>
+    </div>
+    <div class="mt-6">

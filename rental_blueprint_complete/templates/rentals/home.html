@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% load rental_extras %}
+{% block title %}Search for your next property{% endblock %}
+
+{% block content %}
+<section class="bg-gradient-to-br from-teal-900 via-teal-800 to-slate-900 text-white">
+  <div class="mx-auto max-w-5xl px-4 py-14 text-center sm:px-6 sm:py-20">
+    <h1 class="text-3xl font-extrabold tracking-tight sm:text-5xl">Search for your next property</h1>
+    <p class="mx-auto mt-3 max-w-xl text-teal-100">Browse homes, apartments and plots to buy or rent from local agents and owners.</p>
+
+    <form method="get" action="{% url 'rentals:list' %}" class="mt-8 rounded-2xl bg-white p-4 text-left text-slate-800 shadow-2xl sm:p-5" data-loading>
+      <fieldset class="flex gap-2">
+        <legend class="sr-only">Buy or rent</legend>
+        <label class="cursor-pointer"><input type="radio" name="purpose" value="SALE" class="peer sr-only" checked>
+          <span class="block rounded-full px-5 py-2 text-sm font-semibold text-slate-600 peer-checked:bg-teal-800 peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-teal-700">Buy</span></label>
+        <label class="cursor-pointer"><input type="radio" name="purpose" value="RENT" class="peer sr-only">
+          <span class="block rounded-full px-5 py-2 text-sm font-semibold text-slate-600 peer-checked:bg-teal-800 peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-teal-700">Rent</span></label>
+      </fieldset>
+
+      <div class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+        <label class="sm:col-span-2 lg:col-span-2"><span class="text-xs font-medium text-slate-500">Location</span>
+          <input name="q" required maxlength="100" placeholder="City or area, e.g. Lahore" oninvalid="this.setCustomValidity('Please enter a location')" oninput="this.setCustomValidity('')"
+                 class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700/30"></label>
+        <label><span class="text-xs font-medium text-slate-500">Property type</span>
+          <select name="type" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5">
+            <option value="">Any type</option>
+            {% for value, label, n in categories %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+          </select></label>
+        <label><span class="text-xs font-medium text-slate-500">Min price</span>
+          <input type="number" min="0" name="min_price" placeholder="No min" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5"></label>
+        <label><span class="text-xs font-medium text-slate-500">Max price</span>
+          <input type="number" min="0" name="max_price" placeholder="No max" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5"></label>
+        <label><span class="text-xs font-medium text-slate-500">Bedrooms</span>
+          <select name="beds" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5">
+            <option value="">Any</option>{% for i in "12345" %}<option value="{{ i }}">{{ i }}+</option>{% endfor %}
+          </select></label>
+      </div>
+      <div class="mt-4 flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
+        <a href="{% url 'rentals:list' %}" class="text-sm font-medium text-teal-800 hover:underline">or browse all properties →</a>
+        <button type="submit" class="w-full rounded-xl bg-teal-800 px-8 py-3 font-semibold text-white hover:bg-teal-900 sm:w-auto">Search properties</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<main class="mx-auto max-w-7xl space-y-14 px-4 py-12 sm:px-6">
+
+  <section aria-labelledby="cat-h">
+    <h2 id="cat-h" class="text-2xl font-bold text-slate-900">Browse by property type</h2>
+    <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      {% for value, label, n in categories %}
+        <a href="{% url 'rentals:list' %}?type={{ value }}" class="rounded-xl border border-slate-200 bg-white p-4 text-center transition hover:border-teal-700 hover:shadow">
+          <p class="font-semibold text-slate-900">{{ label }}</p><p class="text-sm text-slate-500">{{ n }} listing{{ n|pluralize }}</p></a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section aria-labelledby="feat-h">
+    <div class="flex items-end justify-between"><h2 id="feat-h" class="text-2xl font-bold text-slate-900">Featured properties</h2>
+      <a href="{% url 'rentals:list' %}" class="text-sm font-medium text-teal-800 hover:underline">View all</a></div>
+    <div class="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {% for l in featured %}{% include "rentals/partials/_card.html" %}
+      {% empty %}
+        <div class="col-span-full rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
+          <p class="font-semibold text-slate-900">No properties yet</p>
+          <p class="mt-1 text-sm text-slate-500">Agents can list the first one in a minute.</p>
+          <a href="{% url 'accounts:register' %}?type=VENDOR" class="mt-4 inline-block rounded-lg bg-teal-800 px-5 py-2 text-sm font-semibold text-white">List a property</a>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  {% if popular_cities %}
+  <section aria-labelledby="loc-h">
+    <h2 id="loc-h" class="text-2xl font-bold text-slate-900">Popular locations</h2>
+    <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      {% for c in popular_cities %}
+        <a href="{% url 'rentals:list' %}?q={{ c.city|urlencode }}" class="rounded-xl bg-white p-4 ring-1 ring-slate-200 transition hover:ring-teal-700">
+          <p class="font-semibold text-slate-900">{{ c.city }}</p><p class="text-sm text-slate-500">{{ c.n }} propert{{ c.n|pluralize:"y,ies" }}</p></a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if recent %}
+  <section aria-labelledby="recent-h">
+    <h2 id="recent-h" class="text-2xl font-bold text-slate-900">Recently added</h2>
+    <div class="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      {% for l in recent %}{% include "rentals/partials/_card.html" %}{% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="grid gap-4 md:grid-cols-2">
+    <div class="rounded-2xl bg-teal-800 p-8 text-white">
+      <h2 class="text-xl font-bold">Looking for a place?</h2>
+      <p class="mt-2 text-teal-100">Save favourites, message agents and request bookings from one account.</p>
+      <a href="{% url 'accounts:register' %}" class="mt-5 inline-block rounded-lg bg-white px-5 py-2 font-semibold text-teal-900 hover:bg-teal-50">Create free account</a>
+    </div>
+    <div class="rounded-2xl bg-slate-900 p-8 text-white">
+      <h2 class="text-xl font-bold">Are you an agent or owner?</h2>
+      <p class="mt-2 text-slate-300">List properties with photos, receive inquiries and manage requests.</p>
+      <a href="{% url 'accounts:register' %}?type=VENDOR" class="mt-5 inline-block rounded-lg bg-white px-5 py-2 font-semibold text-slate-900 hover:bg-slate-100">Start listing</a>
+    </div>
+  </section>
+</main>
+{% endblock %}

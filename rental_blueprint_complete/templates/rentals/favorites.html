@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Saved properties{% endblock %}
+{% block content %}
+<main class="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+  <h1 class="text-2xl font-bold text-slate-900">Saved properties</h1>
+  <div class="mt-5 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    {% for l in listings %}{% include "rentals/partials/_card.html" %}
+    {% empty %}
+      <div class="col-span-full rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center">
+        <p class="text-lg font-semibold text-slate-900">Nothing saved yet</p>
+        <p class="mt-1 text-slate-500">Tap the heart on any property to keep it here. Tap it again to remove it.</p>
+        <a href="{% url 'rentals:list' %}" class="mt-4 inline-block rounded-lg bg-teal-800 px-5 py-2 font-semibold text-white">Browse properties</a>
+      </div>
+    {% endfor %}
+  </div>
+</main>
+{% endblock %}

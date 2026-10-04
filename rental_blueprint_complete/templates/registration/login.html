@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Log in{% endblock %}
+{% block content %}
+{% include "rentals/partials/_auth_shell.html" with tab="login" %}
+      <h1 class="text-2xl font-bold text-slate-900">Welcome back</h1>
+      <form method="post" class="mt-5 space-y-4" data-loading>
+        {% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
+        {% if form.errors %}<p role="alert" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800"><i class="fa-solid fa-circle-exclamation mr-1"></i>Wrong username or password. Please try again.</p>{% endif %}
+        {% if next %}<p class="rounded-lg bg-sky-50 px-3 py-2 text-sm text-sky-800">Login required to continue.</p>{% endif %}
+        {% for f in form %}{% include "rentals/partials/_field.html" %}{% endfor %}
+        <button type="submit" class="w-full rounded-xl bg-teal-800 px-4 py-3 font-semibold text-white hover:bg-teal-900">Log in</button>
+      </form>
+    </div>
+  </div>
+</main>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load rental_extras %}
+{% block title %}Booking requests{% endblock %}
+{% block content %}
+<main class="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+  <h1 class="text-2xl font-semibold text-slate-900">Booking requests</h1>
+  <div class="mt-5">{% include "rentals/partials/_vendor_nav.html" %}</div>
+  <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+    <table class="min-w-full text-left text-sm">
+      <thead class="bg-slate-50 text-xs uppercase text-slate-500"><tr><th class="p-3">Property</th><th class="p-3">Guest</th><th class="p-3">Dates</th><th class="p-3">Total</th><th class="p-3">Status</th><th class="p-3"></th></tr></thead>
+      <tbody class="divide-y divide-slate-100">
+      {% for b in bookings %}
+        <tr><td class="p-3 font-medium">{{ b.listing.title }}</td><td class="p-3">{{ b.customer.get_full_name|default:b.customer.username }}</td>
+          <td class="p-3">{{ b.start_date|date:"M j" }} – {{ b.end_date|date:"M j, Y" }}</td><td class="p-3">{{ b.total_price|money }}</td>
+          <td class="p-3">{% include "rentals/partials/_status.html" with s=b.status label=b.get_status_display %}</td>
+          <td class="p-3">{% if b.status == 'PENDING' %}<div class="flex gap-2">
+            <form method="post" action="{% url 'rentals:booking_decision' b.pk 'approve' %}">{% csrf_token %}<button class="rounded bg-teal-800 px-3 py-1 text-white">Approve</button></form>
+            <form method="post" action="{% url 'rentals:booking_decision' b.pk 'reject' %}">{% csrf_token %}<button class="rounded border px-3 py-1">Reject</button></form></div>{% endif %}</td></tr>
+      {% empty %}<tr><td colspan="6" class="p-8 text-center text-slate-600">No booking requests yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</main>
+{% endblock %}

@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}{% if object %}Edit property{% else %}Add property{% endif %}{% endblock %}
+{% block content %}
+<main class="mx-auto max-w-3xl px-4 py-8 sm:px-6">
+  <h1 class="text-2xl font-semibold text-slate-900">{% if object %}Edit “{{ object.title }}”{% else %}Add a property{% endif %}</h1>
+  <div class="mt-5">{% include "rentals/partials/_vendor_nav.html" %}</div>
+
+  <form method="post" enctype="multipart/form-data" class="space-y-8" data-loading novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div role="alert" class="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+
+    <fieldset class="space-y-4 rounded-2xl border border-slate-200 bg-white p-5">
+      <legend class="px-2 font-semibold text-slate-900">Basics</legend>
+      {% include "rentals/partials/_field.html" with f=form.title %}
+      {% include "rentals/partials/_field.html" with f=form.description %}
+      <div class="grid gap-4 sm:grid-cols-2">
+        {% include "rentals/partials/_field.html" with f=form.purpose %}
+        {% include "rentals/partials/_field.html" with f=form.property_type %}
+        <div id="rent-price">{% include "rentals/partials/_field.html" with f=form.price_per_day %}</div>
+        <div id="sale-price">{% include "rentals/partials/_field.html" with f=form.sale_price %}</div>
+      </div>
+    </fieldset>
+
+    <fieldset class="space-y-4 rounded-2xl border border-slate-200 bg-white p-5">
+      <legend class="px-2 font-semibold text-slate-900">Location</legend>
+      <div class="grid gap-4 sm:grid-cols-2">
+        {% include "rentals/partials/_field.html" with f=form.city %}
+        {% include "rentals/partials/_field.html" with f=form.area %}
+      </div>
+      {% include "rentals/partials/_field.html" with f=form.location %}
+    </fieldset>
+
+    <fieldset class="space-y-4 rounded-2xl border border-slate-200 bg-white p-5">
+      <legend class="px-2 font-semibold text-slate-900">Details</legend>
+      <div class="grid gap-4 sm:grid-cols-3">
+        {% include "rentals/partials/_field.html" with f=form.bedrooms %}
+        {% include "rentals/partials/_field.html" with f=form.bathrooms %}
+        {% include "rentals/partials/_field.html" with f=form.size_sqft %}
+      </div>
+      <div>
+        <p class="text-sm font-medium text-slate-700">Amenities</p>
+        <div class="mt-2 grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">
+          {% for cb in form.amenities %}<label class="flex items-center gap-2">{{ cb.tag }} {{ cb.choice_label }}</label>{% endfor %}
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset class="space-y-5 rounded-2xl border border-slate-200 bg-white p-5">
+      <legend class="px-2 font-semibold text-slate-900">Photos</legend>
+      <div>
+        <p class="text-sm font-medium text-slate-700">Cover image {% if not object %}<span class="text-red-600">*</span>{% endif %}</p>
+        <div class="dropzone relative mt-2 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center transition hover:border-teal-700">
+          <i class="fa-solid fa-cloud-arrow-up text-3xl text-teal-700"></i>
+          <p class="mt-2 text-sm text-slate-700"><span class="font-semibold text-teal-800">Click to upload</span> or drag and drop</p>
+          <p class="text-xs text-slate-500">JPG, PNG or WEBP, max 5 MB</p>
+          <input type="file" name="{{ form.image.html_name }}" id="{{ form.image.id_for_label }}" accept="image/jpeg,image/png,image/webp">
+        </div>
+        <div class="preview mt-3 flex flex-wrap gap-3">{% if object and object.image %}<img src="{{ object.image.url }}" alt="Current cover" class="h-24 w-32 rounded-lg object-cover">{% endif %}</div>
+        {% for e in form.image.errors %}<p class="mt-1 text-sm text-red-700">{{ e }}</p>{% endfor %}
+      </div>
+      <div>
+        <p class="text-sm font-medium text-slate-700">{{ form.gallery.label }}</p>
+        <div class="dropzone relative mt-2 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center transition hover:border-teal-700">
+          <i class="fa-regular fa-images text-3xl text-teal-700"></i>
+          <p class="mt-2 text-sm text-slate-700"><span class="font-semibold text-teal-800">Click to upload</span> or drag several photos here (max 10)</p>
+          {{ form.gallery }}
+        </div>
+        <div class="preview mt-3 flex flex-wrap gap-3"></div>
+        {% for e in form.gallery.errors %}<p class="mt-1 text-sm text-red-700">{{ e }}</p>{% endfor %}
+      </div>
+      {% if object and object.images.all %}
+        <div><p class="text-sm font-medium text-slate-700">Current gallery (tick to remove)</p>
+          <div class="mt-2 flex flex-wrap gap-3">
+            {% for img in object.images.all %}<label class="text-xs"><img src="{{ img.image.url }}" alt="" class="h-20 w-28 rounded object-cover"><input type="checkbox" name="delete_images" value="{{ img.pk }}"> remove</label>{% endfor %}
+          </div></div>
+      {% endif %}
+    </fieldset>
+
+    <label class="flex items-center gap-2 text-sm">{{ form.is_active }} {{ form.is_active.label }}</label>
+
+    <div class="flex gap-3">
+      <button type="submit" class="rounded-xl bg-teal-800 px-6 py-3 font-semibold text-white hover:bg-teal-900">{% if object %}Save changes{% else %}Publish property{% endif %}</button>
+      <a href="{% url 'rentals:vendor_properties' %}" class="rounded-xl border border-slate-300 px-6 py-3 font-medium hover:bg-slate-50">Cancel</a>
+    </div>
+  </form>
+</main>
+{% endblock %}
+{% block extra_js %}
+<script>
+  // Show only the price field that matches Buy / Rent.
+  const purpose = document.getElementById("id_purpose");
+  function togglePrice() {
+    const sale = purpose.value === "SALE";
+    document.getElementById("sale-price").style.display = sale ? "" : "none";
+    document.getElementById("rent-price").style.display = sale ? "none" : "";
+  }
+  purpose.addEventListener("change", togglePrice); togglePrice();
+
+  // Upload zones: the real <input> is stretched invisibly over the box (so drag & drop just works) + thumbnails.
+  document.querySelectorAll(".dropzone").forEach(zone => {
+    const input = zone.querySelector("input[type=file]"), preview = zone.parentElement.querySelector(".preview");
+    input.className = "absolute inset-0 h-full w-full cursor-pointer opacity-0";
+    input.addEventListener("change", () => {
+      preview.innerHTML = "";
+      [...input.files].forEach(f => {
+        const img = document.createElement("img");
+        img.src = URL.createObjectURL(f); img.alt = f.name; img.className = "h-24 w-32 rounded-lg object-cover";
+        preview.appendChild(img);
+      });
+    });
+    ["dragenter", "dragover"].forEach(ev => zone.addEventListener(ev, () => zone.classList.add("border-teal-700", "bg-teal-50")));
+    ["dragleave", "drop"].forEach(ev => zone.addEventListener(ev, () => zone.classList.remove("border-teal-700", "bg-teal-50")));
+  });
+</script>
+{% endblock %}

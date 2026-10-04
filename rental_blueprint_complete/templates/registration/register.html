@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Create account{% endblock %}
+{% block content %}
+{% include "rentals/partials/_auth_shell.html" with tab="register" %}
+      <h1 class="text-2xl font-bold text-slate-900">Create your account</h1>
+      <form method="post" class="mt-5 space-y-4" data-loading id="register-form">
+        {% csrf_token %}
+        {% if form.errors %}<p role="alert" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800"><i class="fa-solid fa-circle-exclamation mr-1"></i>Invalid form data. Please fix the fields marked in red.</p>{% endif %}
+        <fieldset><legend class="text-sm font-medium text-slate-700">I am a…</legend>
+          <div class="mt-2 grid gap-2 sm:grid-cols-2">
+            {% for r in form.account_type %}
+              <label class="flex cursor-pointer items-start gap-2 rounded-xl border border-slate-200 p-3 text-sm has-[:checked]:border-teal-700 has-[:checked]:bg-teal-50">{{ r.tag }}
+                <span>{% if forloop.first %}<i class="fa-solid fa-magnifying-glass mr-1 text-teal-700"></i><b>Buyer / Renter</b>{% else %}<i class="fa-solid fa-building mr-1 text-teal-700"></i><b>Vendor / Agent</b>{% endif %}
+                <span class="block text-xs text-slate-500">{{ r.choice_label }}</span></span></label>
+            {% endfor %}
+          </div></fieldset>
+        {% for f in form %}{% if f.name != 'account_type' %}{% include "rentals/partials/_field.html" %}{% endif %}{% endfor %}
+        <button type="submit" class="w-full rounded-xl bg-teal-800 px-4 py-3 font-semibold text-white hover:bg-teal-900">Create account</button>
+      </form>
+    </div>
+  </div>
+</main>
+{% endblock %}
+{% block extra_js %}
+<script>
+  // Live check that both passwords match (server still validates everything).
+  const p1 = document.getElementById("id_password1"), p2 = document.getElementById("id_password2");
+  function match() { p2.setCustomValidity(p2.value && p1.value !== p2.value ? "Passwords do not match" : ""); }
+  if (p1 && p2) { p1.addEventListener("input", match); p2.addEventListener("input", match); }
+</script>
+{% endblock %}

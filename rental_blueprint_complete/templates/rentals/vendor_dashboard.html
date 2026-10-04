@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% load rental_extras %}
+{% block title %}Vendor dashboard{% endblock %}
+
+{% block content %}
+<main class="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <h1 class="text-2xl font-semibold text-slate-900">Vendor dashboard</h1>
+    <a href="{% url 'rentals:add_property' %}" class="rounded-lg bg-teal-800 px-5 py-2.5 text-sm font-semibold text-white shadow hover:bg-teal-900"><i class="fa-solid fa-plus mr-1"></i> Add New Listing</a>
+  </div>
+  <div class="mt-5">{% include "rentals/partials/_vendor_nav.html" %}</div>
+
+  <dl class="grid grid-cols-2 gap-3 lg:grid-cols-5">
+    <div class="rounded-xl bg-white p-4 ring-1 ring-slate-200"><dt class="text-xs text-slate-500"><i class="fa-regular fa-eye mr-1"></i>Total views</dt><dd class="text-2xl font-extrabold">{{ stats.views }}</dd></div>
+    <div class="rounded-xl bg-white p-4 ring-1 ring-slate-200"><dt class="text-xs text-slate-500"><i class="fa-solid fa-user-check mr-1"></i>Leads</dt><dd class="text-2xl font-extrabold">{{ stats.leads }}</dd></div>
+    <div class="rounded-xl bg-white p-4 ring-1 ring-slate-200"><dt class="text-xs text-slate-500"><i class="fa-solid fa-house mr-1"></i>Published</dt><dd class="text-2xl font-extrabold">{{ stats.active }} <span class="text-sm font-normal text-slate-400">/ {{ stats.listings }}</span></dd></div>
+    <div class="rounded-xl bg-white p-4 ring-1 ring-slate-200"><dt class="text-xs text-slate-500"><i class="fa-regular fa-envelope mr-1"></i>New inquiries</dt><dd class="text-2xl font-extrabold">{{ stats.new_inquiries }}</dd></div>
+    <div class="rounded-xl bg-white p-4 ring-1 ring-slate-200"><dt class="text-xs text-slate-500"><i class="fa-regular fa-clock mr-1"></i>Pending requests</dt><dd class="text-2xl font-extrabold">{{ stats.pending }}</dd></div>
+  </dl>
+
+  <section class="mt-8" aria-labelledby="pending-h">
+    <h2 id="pending-h" class="text-lg font-semibold text-slate-900">Requests waiting for you ({{ pending_requests|length }})</h2>
+    <ul class="mt-3 divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white">
+      {% for b in pending_requests %}
+        <li class="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p class="font-medium text-slate-900">{{ b.listing.title }}</p>
+            <p class="text-sm text-slate-600">{{ b.customer.get_full_name|default:b.customer.username }},
+              {{ b.start_date|date:"M j" }} to {{ b.end_date|date:"M j, Y" }} ({{ b.nights }} nights), {{ b.total_price|money }}</p>
+          </div>
+          <div class="flex gap-2">
+            <form method="post" action="{% url 'rentals:booking_decision' b.pk 'approve' %}">{% csrf_token %}
+              <button class="rounded-lg bg-teal-800 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-900">Approve</button>
+            </form>
+            <form method="post" action="{% url 'rentals:booking_decision' b.pk 'reject' %}">{% csrf_token %}
+              <button class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Reject</button>
+            </form>
+          </div>
+        </li>
+      {% empty %}
+        <li class="p-4 text-slate-600">No pending requests. New booking requests show up here.</li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <section class="mt-8" aria-labelledby="upcoming-h">
+    <h2 id="upcoming-h" class="text-lg font-semibold text-slate-900">Upcoming confirmed stays</h2>
+    <ul class="mt-3 divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white">
+      {% for b in upcoming %}
+        <li class="p-4 text-sm text-slate-700"><span class="font-medium text-slate-900">{{ b.listing.title }}</span>,
+          {{ b.customer.username }}, {{ b.start_date|date:"M j" }} to {{ b.end_date|date:"M j, Y" }}</li>
+      {% empty %}
+        <li class="p-4 text-slate-600">No confirmed stays coming up.</li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <section class="mt-8" aria-labelledby="listings-h">
+    <div class="flex items-center justify-between"><h2 id="listings-h" class="text-lg font-semibold text-slate-900">Your listings</h2>
+      <a href="{% url 'rentals:vendor_properties' %}" class="text-sm font-medium text-teal-800 hover:underline">Manage all</a></div>
+    <div class="mt-3 overflow-x-auto rounded-xl border border-slate-200 bg-white">
+      <table class="min-w-full text-left text-sm">
+        <thead class="bg-slate-50 text-xs uppercase text-slate-500"><tr>
+          <th class="p-3">Property</th><th class="p-3">Price</th><th class="p-3">Views</th><th class="p-3">Status</th><th class="p-3 text-right">Actions</th></tr></thead>
+        <tbody class="divide-y divide-slate-100">
+        {% for l in listings %}
+          <tr>
+            <td class="p-3"><a href="{{ l.get_absolute_url }}" class="font-medium text-teal-800 hover:underline">{{ l.title }}</a>
+              <p class="text-xs text-slate-500">{{ l.location_display }} · For {{ l.get_purpose_display }}</p></td>
+            <td class="whitespace-nowrap p-3">{{ l.price|money }}{% if l.is_for_rent %}/day{% endif %}</td>
+            <td class="p-3">{{ l.view_count }}</td>
+            <td class="p-3"><span class="rounded-full px-2.5 py-0.5 text-xs font-semibold {% if l.is_active %}bg-emerald-100 text-emerald-800{% else %}bg-slate-200 text-slate-700{% endif %}">{% if l.is_active %}Active{% else %}Hidden{% endif %}</span></td>
+            <td class="p-3"><div class="flex justify-end gap-2">
+              <a href="{% url 'rentals:edit_property' l.pk %}" class="rounded-lg border border-slate-300 px-3 py-1.5 font-medium hover:bg-slate-50"><i class="fa-solid fa-pen mr-1"></i>Edit</a>
+              <form method="post" action="{% url 'rentals:delete_property' l.pk %}" onsubmit="return confirm('Delete this listing permanently?')">{% csrf_token %}
+                <button class="rounded-lg border border-red-200 px-3 py-1.5 font-medium text-red-700 hover:bg-red-50"><i class="fa-solid fa-trash mr-1"></i>Delete</button></form>
+            </div></td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5" class="p-8 text-center text-slate-600">No listings yet. <a class="font-medium text-teal-800 underline" href="{% url 'rentals:add_property' %}">Add your first property</a>.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+{% endblock %}

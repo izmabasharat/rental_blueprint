@@ -1,0 +1,80 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Search for your next property{% endblock %} · RentalBlueprint</title>
+  {# Tailwind via CDN is fine for development / demos. For production use the Tailwind CLI. #}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ["Inter", "system-ui", "sans-serif"] } } } }</script>
+  <style>
+    :focus-visible { outline: 2px solid #0f766e; outline-offset: 2px; }
+    /* Shared look for every form field rendered with partials/_field.html (login, register, profile...) */
+    .field input:not([type=checkbox]):not([type=radio]):not([type=file]), .field select, .field textarea {
+      width: 100%; border: 1px solid #cbd5e1; border-radius: .5rem; padding: .5rem .75rem; background: #fff; }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      outline: none; border-color: #0f766e; box-shadow: 0 0 0 3px rgba(15,118,110,.25); }
+    .field.field-error input, .field.field-error select, .field.field-error textarea { border-color: #dc2626; background: #fef2f2; }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="min-h-screen bg-slate-50 font-sans text-slate-800 antialiased">
+  <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:rounded focus:bg-white focus:px-3 focus:py-2">Skip to content</a>
+
+  {% include "rentals/partials/_navbar.html" %}
+
+  {% include "rentals/partials/_messages.html" %}
+
+  <div id="main">{% block content %}{% endblock %}</div>
+
+  <footer class="mt-16 bg-slate-900 text-slate-300">
+    <div class="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
+      <div>
+        <p class="text-lg font-bold text-white">RentalBlueprint</p>
+        <p class="mt-2 text-sm">Find homes to buy or rent from trusted local agents and owners.</p>
+      </div>
+      <div><p class="font-semibold text-white">Explore</p>
+        <ul class="mt-2 space-y-1 text-sm">
+          <li><a class="hover:text-white" href="{% url 'rentals:list' %}?purpose=SALE">Properties for sale</a></li>
+          <li><a class="hover:text-white" href="{% url 'rentals:list' %}?purpose=RENT">Properties for rent</a></li>
+          <li><a class="hover:text-white" href="{% url 'rentals:list' %}">All properties</a></li>
+        </ul></div>
+      <div><p class="font-semibold text-white">For agents</p>
+        <ul class="mt-2 space-y-1 text-sm">
+          <li><a class="hover:text-white" href="{% url 'accounts:register' %}?type=VENDOR">List your property</a></li>
+          <li><a class="hover:text-white" href="{% url 'rentals:dashboard' %}">Vendor dashboard</a></li>
+        </ul></div>
+      <div><p class="font-semibold text-white">Account</p>
+        <ul class="mt-2 space-y-1 text-sm">
+          <li><a class="hover:text-white" href="{% url 'login' %}">Login</a></li>
+          <li><a class="hover:text-white" href="{% url 'rentals:favorites' %}">Saved properties</a></li>
+        </ul></div>
+    </div>
+    <p class="border-t border-slate-800 py-4 text-center text-xs text-slate-500">© {% now "Y" %} RentalBlueprint. All rights reserved.</p>
+  </footer>
+
+  <script>
+    const btn = document.getElementById("menu-btn"), menu = document.getElementById("menu");
+    btn.addEventListener("click", () => {
+      const open = menu.classList.toggle("hidden") === false;
+      btn.setAttribute("aria-expanded", open);
+    });
+    // Profile dropdown (only exists when logged in)
+    const pBtn = document.getElementById("profile-btn"), pMenu = document.getElementById("profile-menu");
+    if (pBtn) {
+      pBtn.addEventListener("click", e => { e.stopPropagation(); const open = pMenu.classList.toggle("hidden") === false; pBtn.setAttribute("aria-expanded", open); });
+      document.addEventListener("click", () => { pMenu.classList.add("hidden"); pBtn.setAttribute("aria-expanded", "false"); });
+      document.addEventListener("keydown", e => { if (e.key === "Escape") pMenu.classList.add("hidden"); });
+    }
+    // Disable a form's submit button after the first click (loading state + no double posts).
+    document.querySelectorAll("form[data-loading]").forEach(f => f.addEventListener("submit", () => {
+      const b = f.querySelector("button[type=submit]"); if (b) { b.disabled = true; b.textContent = "Please wait…"; }
+    }));
+  </script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

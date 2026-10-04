@@ -1,0 +1,54 @@
+{# Navigation bar. Included by base.html. Three states: logged out / buyer / vendor. #}
+{% with nav="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-teal-800" %}
+<header class="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
+  <nav class="relative mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6" aria-label="Main">
+    <a href="{% url 'rentals:home' %}" class="flex items-center gap-2 text-xl font-extrabold text-teal-800">
+      <i class="fa-solid fa-house-chimney"></i> RentalBlueprint
+    </a>
+
+    <button id="menu-btn" class="rounded-lg p-2 text-slate-700 hover:bg-slate-100 md:hidden" aria-label="Open menu" aria-expanded="false" aria-controls="menu">
+      <i class="fa-solid fa-bars text-xl"></i>
+    </button>
+
+    <div id="menu" class="absolute left-0 top-full hidden w-full flex-col gap-1 border-b border-slate-200 bg-white px-4 pb-4 pt-2 md:static md:flex md:w-auto md:flex-row md:items-center md:border-0 md:bg-transparent md:p-0">
+      <a class="{{ nav }}" href="{% url 'rentals:home' %}">Home</a>
+      <a class="{{ nav }}" href="{% url 'rentals:list' %}?purpose=SALE">Buy</a>
+      <a class="{{ nav }}" href="{% url 'rentals:list' %}?purpose=RENT">Rent</a>
+      <a class="{{ nav }}" href="{% url 'rentals:list' %}">Properties</a>
+
+      {% if user.is_authenticated %}
+        {% if user.is_vendor %}
+          <a class="{{ nav }}" href="{% url 'rentals:dashboard' %}"><i class="fa-solid fa-gauge mr-1"></i>Vendor dashboard</a>
+        {% endif %}
+        <a class="{{ nav }}" href="{% url 'rentals:account' %}"><i class="fa-regular fa-user mr-1"></i>My account</a>
+        <a class="{{ nav }}" href="{% url 'rentals:favorites' %}"><i class="fa-regular fa-heart mr-1"></i>Saved</a>
+
+        <div class="relative md:ml-2">
+          <button id="profile-btn" type="button" aria-haspopup="true" aria-expanded="false"
+                  class="flex w-full items-center gap-2 rounded-full border border-slate-300 py-1 pl-1 pr-3 text-sm font-medium hover:bg-slate-50 md:w-auto">
+            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-teal-800 text-white">{{ user.username|slice:":1"|upper }}</span>
+            <span class="max-w-[8rem] truncate">{{ user.first_name|default:user.username }}</span>
+            <i class="fa-solid fa-chevron-down text-xs text-slate-500"></i>
+          </button>
+          <div id="profile-menu" class="z-50 mt-2 hidden w-56 rounded-xl border border-slate-200 bg-white py-2 shadow-xl md:absolute md:right-0">
+            <p class="px-4 pb-2 text-xs text-slate-500">Signed in as <span class="font-semibold text-slate-800">{{ user.username }}</span><br>{{ user.get_role_display }}</p>
+            <a class="block px-4 py-2 text-sm hover:bg-slate-50" href="{% url 'accounts:profile' %}"><i class="fa-regular fa-id-card mr-2 w-4"></i>Profile</a>
+            <a class="block px-4 py-2 text-sm hover:bg-slate-50" href="{% url 'rentals:account' %}"><i class="fa-regular fa-user mr-2 w-4"></i>User dashboard</a>
+            {% if user.is_vendor %}
+              <a class="block px-4 py-2 text-sm hover:bg-slate-50" href="{% url 'rentals:dashboard' %}"><i class="fa-solid fa-gauge mr-2 w-4"></i>Vendor dashboard</a>
+              <a class="block px-4 py-2 text-sm hover:bg-slate-50" href="{% url 'rentals:add_property' %}"><i class="fa-solid fa-plus mr-2 w-4"></i>Add listing</a>
+            {% endif %}
+            <form method="post" action="{% url 'logout' %}" class="mt-1 border-t border-slate-100 pt-1">{% csrf_token %}
+              <button class="block w-full px-4 py-2 text-left text-sm text-red-700 hover:bg-red-50"><i class="fa-solid fa-arrow-right-from-bracket mr-2 w-4"></i>Log out</button>
+            </form>
+          </div>
+        </div>
+      {% else %}
+        <a class="{{ nav }}" href="{% url 'accounts:register' %}?type=VENDOR">For agents</a>
+        <a class="rounded-lg border border-slate-300 px-4 py-2 text-center text-sm font-semibold text-slate-800 hover:bg-slate-50 md:ml-2" href="{% url 'login' %}">Login</a>
+        <a class="rounded-lg bg-teal-800 px-4 py-2 text-center text-sm font-semibold text-white hover:bg-teal-900" href="{% url 'accounts:register' %}">Register</a>
+      {% endif %}
+    </div>
+  </nav>
+</header>
+{% endwith %}

@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+{% load rental_extras %}
+{# Property details page. The booking card (date pickers + live price) is your original code, kept as-is. #}
+{% block title %}{{ listing.title }} · {{ listing.location_display }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+{% endblock %}
+
+{% block content %}
+<main class="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:py-10">
+
+  {% if not listing.is_active %}
+    <div class="mb-4 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800 ring-1 ring-amber-200">This property is hidden from search. Only you can see it.</div>
+  {% endif %}
+
+  <header class="mb-5 flex flex-wrap items-start justify-between gap-3">
+    <div>
+      <span class="rounded-full px-3 py-1 text-xs font-semibold text-white {% if listing.is_for_rent %}bg-teal-700{% else %}bg-indigo-700{% endif %}">For {{ listing.get_purpose_display }}</span>
+      <h1 class="mt-2 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">{{ listing.title }}</h1>
+      <p class="mt-1 text-slate-600">{{ listing.location_display }}{% if listing.location and listing.area %} · {{ listing.location }}{% endif %}</p>
+      <p class="mt-1 flex items-center gap-2 text-sm text-slate-600">
+        {% if review_count %}{% include "rentals/partials/_stars.html" with value=avg_rating %}
+          <span class="font-medium text-slate-900">{{ avg_rating|floatformat:1 }}</span><span>({{ review_count }} review{{ review_count|pluralize }})</span>
+        {% else %}No reviews yet{% endif %}
+      </p>
+    </div>
+    {% if user.is_authenticated and not is_owner %}
+      <form method="post" action="{% url 'rentals:toggle_favorite' listing.pk %}">{% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.path }}">
+        <button class="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-50">
+          <svg class="h-5 w-5 {% if is_favorite %}fill-rose-500 text-rose-500{% else %}fill-none text-slate-600{% endif %}" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.6-9.5-9A5.5 5.5 0 0112 6a5.5 5.5 0 019.5 6c-2.5 4.4-9.5 9-9.5 9z"/></svg>
+          {% if is_favorite %}Saved{% else %}Save{% endif %}</button>
+      </form>
+    {% elif not user.is_authenticated %}
+      <a href="{% url 'login' %}?next={{ request.path }}" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-50">♡ Log in to save</a>
+    {% endif %}
+  </header>
+
+  <!-- ===== Gallery ===== -->
+  <section aria-label="Photos">
+    <div id="slider" class="relative overflow-hidden rounded-2xl bg-slate-200">
+      <img id="main-photo" src="{{ listing.image.url }}" alt="{{ listing.title }}" class="h-64 w-full object-cover sm:h-[28rem]">
+      {% if gallery %}
+        <button type="button" id="prev-photo" aria-label="Previous photo" class="absolute left-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 shadow hover:bg-white"><i class="fa-solid fa-chevron-left"></i></button>
+        <button type="button" id="next-photo" aria-label="Next photo" class="absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 shadow hover:bg-white"><i class="fa-solid fa-chevron-right"></i></button>
+        <span id="photo-counter" class="absolute bottom-3 right-3 rounded-full bg-black/60 px-3 py-1 text-xs font-medium text-white"></span>
+      {% endif %}
+    </div>
+    {% if gallery %}
+    <div class="mt-3 flex gap-2 overflow-x-auto pb-1">
+      <button type="button" data-src="{{ listing.image.url }}" class="thumb shrink-0 overflow-hidden rounded-lg ring-2 ring-teal-700"><img src="{{ listing.image.url }}" alt="Cover photo" class="h-16 w-24 object-cover"></button>
+      {% for img in gallery %}
+        <button type="button" data-src="{{ img.image.url }}" class="thumb shrink-0 overflow-hidden rounded-lg ring-2 ring-transparent"><img src="{{ img.image.url }}" alt="Photo {{ forloop.counter }}" class="h-16 w-24 object-cover" loading="lazy"></button>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </section>
+
+  <div class="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_380px]">
+
+    <!-- ============ LEFT: details ============ -->
+    <div class="min-w-0">
+      <section class="border-b border-slate-200 pb-6">
+        <p class="text-3xl font-bold text-slate-900">{{ listing.price|money }}{% if listing.is_for_rent %}<span class="text-base font-normal text-slate-500"> per day</span>{% endif %}</p>
+        <dl class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div class="rounded-xl bg-white p-3 ring-1 ring-slate-200"><dt class="text-xs text-slate-500">Type</dt><dd class="font-semibold">{{ listing.get_property_type_display }}</dd></div>
+          <div class="rounded-xl bg-white p-3 ring-1 ring-slate-200"><dt class="text-xs text-slate-500">Bedrooms</dt><dd class="font-semibold">{{ listing.bedrooms }}</dd></div>
+          <div class="rounded-xl bg-white p-3 ring-1 ring-slate-200"><dt class="text-xs text-slate-500">Bathrooms</dt><dd class="font-semibold">{{ listing.bathrooms }}</dd></div>
+          <div class="rounded-xl bg-white p-3 ring-1 ring-slate-200"><dt class="text-xs text-slate-500">Size</dt><dd class="font-semibold">{% if listing.size_sqft %}{{ listing.size_sqft }} sq ft{% else %}n/a{% endif %}</dd></div>
+        </dl>
+      </section>
+
+      <section class="border-b border-slate-200 py-6">
+        <h2 class="text-xl font-semibold text-slate-900">Description</h2>
+        <p class="mt-3 max-w-prose whitespace-pre-line leading-relaxed text-slate-700">{{ listing.description }}</p>
+      </section>
+
+      {% if amenities %}
+      <section class="border-b border-slate-200 py-6">
+        <h2 class="text-xl font-semibold text-slate-900">Amenities</h2>
+        <ul class="mt-3 grid grid-cols-2 gap-2 text-sm text-slate-700 sm:grid-cols-3">
+          {% for a in amenities %}<li class="flex items-center gap-2"><span class="text-teal-700">✓</span>{{ a }}</li>{% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+
+      <section class="border-b border-slate-200 py-6">
+        <h2 class="text-xl font-semibold text-slate-900">Listed by</h2>
+        <p class="mt-2 text-lg font-medium text-slate-900">{{ listing.vendor.get_full_name|default:listing.vendor.username }}</p>
+        <p class="text-sm text-slate-500">Agent / owner · member since {{ listing.vendor.date_joined|date:"Y" }}</p>
+      </section>
+
+      <!-- ===== Reviews ===== -->
+      <section class="pt-6" aria-labelledby="reviews-heading">
+        <h2 id="reviews-heading" class="text-xl font-semibold text-slate-900">Reviews and ratings</h2>
+        {% if review_count %}
+          <p class="mt-2 flex items-center gap-3"><span class="text-4xl font-bold">{{ avg_rating|floatformat:1 }}</span>
+            <span>{% include "rentals/partials/_stars.html" with value=avg_rating %}<br><span class="text-sm text-slate-500">{{ review_count }} review{{ review_count|pluralize }}</span></span></p>
+        {% endif %}
+        <ul class="mt-4 space-y-5">
+          {% for review in reviews %}
+            <li class="rounded-xl bg-white p-4 ring-1 ring-slate-200">
+              <p class="flex items-center gap-2 text-sm font-medium text-slate-900">{{ review.user.first_name|default:review.user.username }}
+                {% include "rentals/partials/_stars.html" with value=review.rating %}
+                <span class="text-xs font-normal text-slate-500">{{ review.created_at|date:"M j, Y" }}</span></p>
+              {% if review.comment %}<p class="mt-1 max-w-prose text-slate-700">{{ review.comment }}</p>{% endif %}
+            </li>
+          {% empty %}
+            <li class="text-slate-600">Reviews appear here after guests complete a stay.</li>
+          {% endfor %}
+        </ul>
+
+        {% if review_form %}
+        <form method="post" action="{% url 'rentals:submit_review' listing.pk %}" class="mt-6 rounded-xl bg-white p-4 ring-1 ring-slate-200" data-loading>
+          {% csrf_token %}
+          <h3 class="font-semibold text-slate-900">Write a review</h3>
+          {% if review_form.non_field_errors %}<p role="alert" class="mt-2 text-sm text-red-700">{{ review_form.non_field_errors|join:" " }}</p>{% endif %}
+          <fieldset class="mt-2"><legend class="text-sm text-slate-600">Your rating</legend>
+            <div class="mt-1 flex gap-4">{% for radio in review_form.rating %}<label class="flex items-center gap-1 text-sm">{{ radio.tag }} {{ radio.choice_label }} ★</label>{% endfor %}</div>
+            {% for e in review_form.rating.errors %}<p class="text-sm text-red-700">{{ e }}</p>{% endfor %}
+          </fieldset>
+          <div class="mt-3">{{ review_form.comment }}</div>
+          <button type="submit" class="mt-3 rounded-lg bg-teal-800 px-5 py-2 font-semibold text-white hover:bg-teal-900">Post review</button>
+        </form>
+        {% elif user.is_authenticated and not is_owner %}
+          <p class="mt-4 text-sm text-slate-500">You can review this property after completing a confirmed stay.</p>
+        {% endif %}
+      </section>
+    </div>
+
+    <!-- ============ RIGHT: booking + contact ============ -->
+    <aside class="space-y-5 lg:sticky lg:top-24 lg:self-start">
+
+      {% if listing.is_for_rent and listing.is_active %}
+      <form method="post" id="booking-form"
+            class="rounded-2xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-900/5"
+            data-quote-url="{% url 'rentals:quote' listing.pk %}"
+            data-price="{{ listing.price_per_day }}">
+        {% csrf_token %}
+        <p class="text-2xl font-semibold text-slate-900">
+          {{ listing.price_per_day|money }} <span class="text-base font-normal text-slate-600">per day</span>
+        </p>
+
+        {% if form.non_field_errors %}
+          <div role="alert" class="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800">{{ form.non_field_errors|join:" " }}</div>
+        {% endif %}
+
+        <div class="mt-4 grid grid-cols-2 overflow-hidden rounded-xl border border-slate-300 focus-within:ring-2 focus-within:ring-teal-700">
+          <label class="border-r border-slate-300 p-3"><span class="block text-xs font-medium text-slate-600">Check-in</span>{{ form.start_date }}</label>
+          <label class="p-3"><span class="block text-xs font-medium text-slate-600">Check-out</span>{{ form.end_date }}</label>
+        </div>
+        {% for err in form.start_date.errors %}<p class="mt-1 text-sm text-red-700">{{ err }}</p>{% endfor %}
+        {% for err in form.end_date.errors %}<p class="mt-1 text-sm text-red-700">{{ err }}</p>{% endfor %}
+
+        <div id="price-summary" class="mt-4 hidden space-y-2 text-sm text-slate-700" aria-live="polite">
+          <div class="flex justify-between">
+            <span><span id="ps-price">{{ listing.price_per_day }}</span> × <span id="ps-nights">0</span> nights</span>
+            <span id="ps-subtotal">$0.00</span>
+          </div>
+          <div class="flex justify-between border-t border-slate-200 pt-3 text-base font-semibold text-slate-900">
+            <span>Total</span><span id="ps-total">$0.00</span>
+          </div>
+        </div>
+        <p id="availability-msg" class="mt-3 hidden text-sm" aria-live="polite"></p>
+
+        {% if is_owner %}
+          <p class="mt-4 text-center text-sm text-slate-500">This is your own listing.</p>
+        {% elif user.is_authenticated %}
+          <button type="submit" id="book-btn"
+                  class="mt-5 w-full rounded-xl bg-teal-800 px-4 py-3 font-semibold text-white transition hover:bg-teal-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-300">
+            Request to book
+          </button>
+          <p class="mt-3 text-center text-xs text-slate-500">The host confirms your request. You aren't charged yet.</p>
+        {% else %}
+          <a href="{% url 'login' %}?next={{ request.path }}"
+             class="mt-5 block w-full rounded-xl bg-teal-800 px-4 py-3 text-center font-semibold text-white hover:bg-teal-900">Log in to book</a>
+        {% endif %}
+      </form>
+      {% elif not listing.is_for_rent %}
+      <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-900/5">
+        <p class="text-2xl font-semibold text-slate-900">{{ listing.sale_price|money }}</p>
+        <p class="mt-1 text-sm text-slate-500">This property is for sale. Send the agent an inquiry below.</p>
+      </div>
+      {% endif %}
+
+      <!-- ===== Contact agent ===== -->
+      {% if not is_owner and listing.is_active %}
+      <div id="contact" class="rounded-2xl border border-slate-200 bg-white p-5">
+        <h2 class="text-lg font-semibold text-slate-900">Contact agent</h2>
+        {% if user.is_authenticated %}
+        <form method="post" action="{% url 'rentals:send_inquiry' listing.pk %}" class="mt-3 space-y-3" data-loading novalidate>
+          {% csrf_token %}
+          {% for f in inquiry_form %}
+            <div><label for="{{ f.id_for_label }}" class="text-sm font-medium text-slate-700">{{ f.label }}</label>{{ f }}
+              {% for e in f.errors %}<p class="mt-1 text-sm text-red-700">{{ e }}</p>{% endfor %}</div>
+          {% endfor %}
+          <button type="submit" class="w-full rounded-xl bg-slate-900 px-4 py-3 font-semibold text-white hover:bg-slate-800">Send inquiry</button>
+        </form>
+        {% else %}
+          <p class="mt-2 text-sm text-slate-600">Login required to contact the agent.</p>
+          <a href="{% url 'login' %}?next={{ request.path }}" class="mt-3 block rounded-xl bg-slate-900 px-4 py-3 text-center font-semibold text-white hover:bg-slate-800">Log in to contact agent</a>
+        {% endif %}
+      </div>
+      {% endif %}
+    </aside>
+  </div>
+
+  {% if similar %}
+  <section class="mt-14" aria-labelledby="sim-h">
+    <h2 id="sim-h" class="text-2xl font-bold text-slate-900">Similar properties</h2>
+    <div class="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{% for l in similar %}{% include "rentals/partials/_card.html" %}{% endfor %}</div>
+  </section>
+  {% endif %}
+</main>
+
+{% if listing.is_for_rent %}{{ blocked_ranges|json_script:"blocked-ranges" }}{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Gallery slider: arrows, thumbnails, keyboard (← →) and touch swipe.
+  const thumbs = [...document.querySelectorAll(".thumb")], main = document.getElementById("main-photo");
+  let idx = 0;
+  function show(i) {
+    if (!thumbs.length) return;
+    idx = (i + thumbs.length) % thumbs.length;
+    main.src = thumbs[idx].dataset.src;
+    thumbs.forEach((t, j) => { t.classList.toggle("ring-teal-700", j === idx); t.classList.toggle("ring-transparent", j !== idx); });
+    document.getElementById("photo-counter").textContent = `${idx + 1} / ${thumbs.length}`;
+  }
+  if (thumbs.length) {
+    thumbs.forEach((t, j) => t.addEventListener("click", () => show(j)));
+    document.getElementById("prev-photo").addEventListener("click", () => show(idx - 1));
+    document.getElementById("next-photo").addEventListener("click", () => show(idx + 1));
+    document.addEventListener("keydown", e => { if (e.key === "ArrowLeft") show(idx - 1); if (e.key === "ArrowRight") show(idx + 1); });
+    let x0 = null; const sl = document.getElementById("slider");
+    sl.addEventListener("touchstart", e => { x0 = e.touches[0].clientX; }, { passive: true });
+    sl.addEventListener("touchend", e => { if (x0 === null) return; const dx = e.changedTouches[0].clientX - x0; if (Math.abs(dx) > 40) show(idx + (dx < 0 ? 1 : -1)); x0 = null; });
+    show(0);
+  }
+</script>
+{% if listing.is_for_rent and listing.is_active %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+<script>
+(() => {
+  const form = document.getElementById("booking-form");
+  const blocked = JSON.parse(document.getElementById("blocked-ranges").textContent)
+    .map(r => ({ from: new Date(r.from + "T00:00"), to: new Date(r.to + "T00:00") }));
+  const pricePerDay = parseFloat(form.dataset.price);
+  const money = n => "$" + n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const iso = d => flatpickr.formatDate(d, "Y-m-d");
+  const dayAfter = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+
+  // Check-in is blocked from a booking's first night through its LAST night; checkout day stays free.
+  const blockedNights = blocked.map(b => ({ from: b.from, to: dayAfter(b.to, -1) }));
+
+  const summary = document.getElementById("price-summary");
+  const msg = document.getElementById("availability-msg");
+  const btn = document.getElementById("book-btn");
+
+  const checkout = flatpickr("#id_end_date", { dateFormat: "Y-m-d", altInput: true, altFormat: "M j, Y",
+    minDate: dayAfter(new Date(), 1), onChange: update });
+
+  const checkin = flatpickr("#id_start_date", { dateFormat: "Y-m-d", altInput: true, altFormat: "M j, Y",
+    minDate: "today", disable: blockedNights,
+    onChange: ([start]) => {
+      if (!start) return;
+      const next = blocked.filter(b => b.from > start).sort((a, b) => a.from - b.from)[0];
+      checkout.set("minDate", dayAfter(start, 1));
+      checkout.set("maxDate", next ? next.from : null);
+      const [end] = checkout.selectedDates;
+      if (end && (end <= start || (next && end > next.from))) checkout.clear();
+      update();
+    } });
+
+  function update() {
+    const [s] = checkin.selectedDates, [e] = checkout.selectedDates;
+    if (!s || !e || e <= s) { summary.classList.add("hidden"); msg.classList.add("hidden"); return; }
+
+    const nights = Math.round((e - s) / 864e5), total = nights * pricePerDay;
+    document.getElementById("ps-nights").textContent = nights;
+    document.getElementById("ps-subtotal").textContent = money(total);
+    document.getElementById("ps-total").textContent = money(total);
+    summary.classList.remove("hidden");
+
+    fetch(`${form.dataset.quoteUrl}?start=${iso(s)}&end=${iso(e)}`)
+      .then(r => r.json())
+      .then(q => {
+        msg.classList.remove("hidden");
+        if (q.ok && q.available) {
+          msg.textContent = "These dates are available."; msg.className = "mt-3 text-sm text-emerald-700";
+          if (btn) btn.disabled = false;
+        } else {
+          msg.textContent = q.error || "These dates were just taken. Try different dates."; msg.className = "mt-3 text-sm text-red-700";
+          if (btn) btn.disabled = true;
+        }
+      });
+  }
+})();
+</script>
+{% endif %}
+{% endblock %}

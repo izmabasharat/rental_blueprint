@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load rental_extras %}
+{% block title %}My account{% endblock %}
+{% block content %}
+<main class="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div><h1 class="text-2xl font-semibold text-slate-900">Hello, {{ user.first_name|default:user.username }}</h1>
+      <p class="text-sm text-slate-500">{{ user.email|default:"No email set" }}</p></div>
+    <div class="flex gap-2">
+      <a href="{% url 'accounts:profile' %}" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-50">Edit profile</a>
+      <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white">Log out</button></form>
+    </div>
+  </div>
+
+  <section class="mt-8">
+    <div class="flex items-center justify-between"><h2 class="text-lg font-semibold">Saved properties ({{ favorite_count }})</h2>
+      {% if favorite_count %}<a href="{% url 'rentals:favorites' %}" class="text-sm font-medium text-teal-800 hover:underline">View all</a>{% endif %}</div>
+    <ul class="mt-3 divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white">
+      {% for f in favorites %}
+      <li class="flex items-center justify-between gap-3 p-4">
+        <a href="{{ f.listing.get_absolute_url }}" class="min-w-0 truncate font-medium text-slate-900 hover:text-teal-800">{{ f.listing.title }}</a>
+        <form method="post" action="{% url 'rentals:toggle_favorite' f.listing.pk %}">{% csrf_token %}<input type="hidden" name="next" value="{% url 'rentals:account' %}">
+          <button class="text-sm text-red-700 hover:underline">Remove</button></form>
+      </li>
+      {% empty %}<li class="p-4 text-slate-600">Nothing saved yet. <a class="font-medium text-teal-800 underline" href="{% url 'rentals:list' %}">Browse properties</a>.</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="mt-8">
+    <h2 class="text-lg font-semibold">Recent searches</h2>
+    <div class="mt-3 flex flex-wrap gap-2">
+      {% for s in request.session.recent_searches %}
+        <a href="{% url 'rentals:list' %}?{{ s.qs }}" class="rounded-full border border-slate-300 bg-white px-4 py-1.5 text-sm hover:border-teal-700 hover:text-teal-800"><i class="fa-solid fa-magnifying-glass mr-1 text-xs text-slate-400"></i>{{ s.label }}</a>
+      {% empty %}<p class="text-slate-600">Your searches will show up here.</p>{% endfor %}
+    </div>
+  </section>
+
+  <section class="mt-8">
+    <h2 class="text-lg font-semibold">My inquiries</h2>
+    <ul class="mt-3 divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white">
+      {% for i in inquiries %}
+      <li class="p-4"><div class="flex items-center justify-between gap-2"><a href="{{ i.listing.get_absolute_url }}" class="font-medium text-slate-900 hover:text-teal-800">{{ i.listing.title }}</a>
+        {% include "rentals/partials/_status.html" with s=i.status label=i.get_status_display %}</div>
+        <p class="mt-1 line-clamp-2 text-sm text-slate-600">{{ i.message }}</p><p class="text-xs text-slate-400">{{ i.created_at|date:"M j, Y" }}</p></li>
+      {% empty %}<li class="p-4 text-slate-600">You haven't contacted any agents yet.</li>{% endfor %}
+    </ul>
+  </section>
+
+  <section class="mt-8">
+    <h2 class="text-lg font-semibold">My rental / booking requests</h2>
+    <ul class="mt-3 divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white">
+      {% for b in bookings %}
+      <li class="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div><a href="{{ b.listing.get_absolute_url }}" class="font-medium text-slate-900 hover:text-teal-800">{{ b.listing.title }}</a>
+          <p class="text-sm text-slate-600">{{ b.start_date|date:"M j" }} – {{ b.end_date|date:"M j, Y" }} · {{ b.total_price|money }}</p></div>
+        <div class="flex items-center gap-3">{% include "rentals/partials/_status.html" with s=b.status label=b.get_status_display %}
+          {% if b.status == 'PENDING' %}<form method="post" action="{% url 'rentals:cancel_booking' b.pk %}">{% csrf_token %}<button class="text-sm text-red-700 hover:underline">Cancel</button></form>{% endif %}</div>
+      </li>
+      {% empty %}<li class="p-4 text-slate-600">No booking requests yet.</li>{% endfor %}
+    </ul>
+  </section>
+</main>
+{% endblock %}
